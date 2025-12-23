@@ -16,8 +16,7 @@ genCompatFromOrJs paramStr:
   let ii = i + 1  #[- 1 + argsStart]#
   let res = argv[ii]
   if res.isUndefined:
-    # FIXME: bound shall be argv.len - argsStart
-    raise newException(IndexDefect, formatErrorIndexBound(i, argv.len - argsStart - 1))
+    raise newException(IndexDefect, formatErrorIndexBound(i, argv.len - argsStart))
   $(res.to cstring)
 
 genCompatFromOrJs commandLineParams:
