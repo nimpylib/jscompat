@@ -6,11 +6,23 @@ import std/[strutils, os]
 import unittest
 
 import jscompat/[
-  os, cmdline,
+  os, cmdline, syncio
 ]
+
+template check_is_this_file_result(s: string) =
+  check s.lastPathPart.startsWith"t_others"
+  # XXX: renaming this file requires update string above
+
 test "os":
-  let fullpath = getAppFilenameCompat()
-  let last = fullpath.lastPathPart
-  check last.startsWith "t_others"
-  echo paramStrCompat 0
+  check_is_this_file_result getAppFilenameCompat()
+  check fileExistsCompat currentSourcePath()
+
+test "cmdline":
+  check_is_this_file_result paramStrCompat(0)
+  check commandLineParams().len == 0
+
+test "syncio":
+  let content = readFileCompat currentSourcePath()
+  check content.startsWith "discard"
+ 
 
