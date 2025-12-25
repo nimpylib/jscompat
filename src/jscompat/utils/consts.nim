@@ -5,9 +5,9 @@ when defined(js):
   const
     InNodeJs = defined(nodejs)
   template importjsObject(econsts; name: string) =
-    when InNodeJs:
-      let econsts = require(cstring name)
-    else:
+    #when InNodeJs:
+    #  let econsts = require(cstring name)
+    #else:
       let econsts{.importjs: awaitImportNodeExpr(name).}: JsObject
   template importjsObject(econsts) = importjsObject(econsts, astToStr(econsts))
 
