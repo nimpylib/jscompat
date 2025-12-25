@@ -2,7 +2,7 @@
 import ./private/utils
 when defined(js):
   import std/jsffi
-  import ./utils/dispatch
+  import ./utils/[dispatch, oserr]
   proc bufferAsString(buf: JsObject): string =
     let n = buf.length.to int
     when declared(newStringUninit):
@@ -13,6 +13,12 @@ when defined(js):
       for i in 0..<n:
         result.add buf[i]
 
+  template cathchJsErrAndRiaseIOError(body) =
+    bind catchJsErrAsCode
+    var msg: string
+    let err = catchJsErrAsCode msg: body
+    if err != 0:
+      raise newException(IOError, msg)
   # without {'encoding': ...} option, Buffer returned
   proc readFileSync(p: cstring): JsObject{.importjs: fsDeno"readFileSync".}
   proc writeFileSync(p, data: cstring){.importjs: fsDeno"writeFileSync".}
@@ -21,9 +27,13 @@ when defined(js):
 when defined(nimPreviewSlimSystem):
   import std/syncio
 
-genCompatFromOrJs readFile: readFileSync(cstring filename).bufferAsString
+genCompatFromOrJs readFile:
+  var res: string
+  cathchJsErrAndRiaseIOError:
+    res = readFileSync(cstring filename).bufferAsString
+  res
 proc writeFile(filename, content: string){.toCompatUseStdOrJs.} =
-  writeFileSync(cstring filename, cstring content)
+  cathchJsErrAndRiaseIOError writeFileSync(cstring filename, cstring content)
 
 when isMainModule:
   echo readFileCompat "syncio.nim"

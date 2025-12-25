@@ -24,5 +24,7 @@ test "cmdline":
 test "syncio":
   let content = readFileCompat currentSourcePath()
   check content.startsWith "discard"
+  expect IOError:
+    discard readFileCompat "<?:*>"
  
 
