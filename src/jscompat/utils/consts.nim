@@ -8,7 +8,7 @@ when defined(js):
     #when InNodeJs:
     #  let econsts = require(cstring name)
     #else:
-      let econsts{.importjs: awaitImportNodeExpr(name).}: JsObject
+      let econsts{.importjs: exprImportNode(name).}: JsObject
   template importjsObject(econsts) = importjsObject(econsts, astToStr(econsts))
 
   template from_js_constImpl[T](econsts; name; defVal: T): T =

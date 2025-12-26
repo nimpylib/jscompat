@@ -60,7 +60,7 @@ when defined(js):
       denoExpr="Deno."&denoAttr
     )
 
-  func requireExpr(module: string): string = "require('" & module & "')"
+  func requireExpr(module: string): string = exprImportNode module
   macro importDenoOrNodeMod*(modInNode, attr; def) =
     importDenoOrImpl(def, requireExpr $modInNode, attr)
   macro importInNodeModOrDeno*(modInNode, attrNode, attrDeno; def) =
@@ -71,7 +71,7 @@ when defined(js):
   proc importNodeImpl(def: NimNode, module, symExpr: string): NimNode =
     importByNodeOrDenoImpl(def,
       requireExpr(module) & '.' & symExpr,
-      '(' & awaitImportNodeExpr(module) & ")." & symExpr
+      '(' & exprImportNode(module) & ")." & symExpr
     )
 
   proc importDenoOrProcessAux(denoAttr, nodeAttr, def: NimNode): NimNode =

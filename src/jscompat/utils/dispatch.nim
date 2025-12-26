@@ -33,23 +33,26 @@ when defined(js):
   #NOTE: As ./compat.nim uses js top-level import, so the whole JS file is
   # ES module, thus `require` is not defined, which we cannot use here.
   #template genX(name; s){.dirty.} =
-  func awaitImportNodeExpr*(s: string): string =
+  func exprImportNode*(s: string): string =
     ## internal. unstable.
-    result = "import('node:"&s&"')"
-    #XXX: In browser (firefox, not chrome), top-level `await import` causes:
-    #  `Uncaught SyntaxError: expected expression, got ')'`
-    #   so I wrap `import` with `()`.
-    # However, await followed by '(' is allowed by nodejs iff in ESM mode
-    # (In CommonJs mode, such AST seems to be parsed as something like function call:
-    # `ReferenceError: await is not defined`
-    # )
-    when defined(jscompat_node_esm):
-      result = '('&result&')'
-    result = "(await "&result&")"
+    when defined(nodejs) and not defined(esModule):
+      result = "require('" & s & "')"
+    else:
+      result = "import('node:"&s&"')"
+      #XXX: In nodejs, if `require` is used, top-level `await import` causes:
+      #  `SyntaxError: Unexpected token 'import'`
+      #   so I wrap `import` with `()`.
+      # `await` followed by '(' is allowed by nodejs iff in ESM mode
+      # (In CommonJs mode, such notation seems to be evaluated as function call:
+      # `ReferenceError: await is not defined`
+      # )
+      when true: #defined(jscompat_node_esm):
+        result = '('&result&')'
+      result = "(await "&result&")"
   template genXorDeno(name; s){.dirty.} =
-    bindExpr[] name, nodeno(awaitImportNodeExpr s, "Deno", "null")
+    bindExpr[] name, nodeno(exprImportNode s, "Deno", "null")
   template genX(name; s){.dirty.} =
-    bindExpr[] name, ifOr(notNodeInJs && notDenoInJs, "null", awaitImportNodeExpr s)
+    bindExpr[] name, ifOr(notNodeInJs && notDenoInJs, "null", exprImportNode s)
   # using `await import` without paran will causes js SyntaxError on non-nodejs
   genXorDeno fsOrDeno, "fs"
   genXorDeno ttyOrDeno, "tty"  # for .isatty
