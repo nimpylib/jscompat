@@ -9,6 +9,7 @@ proc add*[T](arr: JsArray[T]; x: T){.importcpp: "push".}
 proc newJsArray*[T](x: openArray[T]): JsArray[T] =
   result = newJsArray[T]()
   for i in x: result.add i
+proc newJsArrayFillWithEmpty[T](n: Natural): JsArray[T]{.importjs: "new Array(#)".}
 
 using arr: JsArray
 proc len*(arr): int{.importjs: "#.length".}
@@ -38,8 +39,13 @@ proc del*(arr: JsArray; i: int) =
 proc `[]`*[T](arr: JsArray[T]; i: BackwardsIndex): T = arr[arr.len-int(i)]
 proc `[]=`*[T](arr: JsArray[T]; i: BackwardsIndex; x: T) = arr[arr.len-int(i)] = x
 
+proc newJsArray*[T](n: Natural): JsArray[T] =
+  result = newJsArrayFillWithEmpty[T](n)
+  for i in 0..<n:
+    `[]= unchkIdx` result, i, default T
+
 iterator items*[T](arr: JsArray[T]): T =
-  for i in cast[JsObject](arr): yield i.to T
+  for i in jsffi.items cast[JsObject](arr): yield i.to T
 iterator pairs*[T](arr: JsArray[T]): (int, T) =
   var i = 0
   for e in arr:
@@ -47,6 +53,8 @@ iterator pairs*[T](arr: JsArray[T]): (int, T) =
     i.inc
 
 proc `==`*[T](a, b: JsArray[T]): bool =
+  if a.isNull: return b.isNull
+  if b.isNull: return a.isNull
   if a.len != b.len: return
   for i, e in a:
     if e != b[i]: return
