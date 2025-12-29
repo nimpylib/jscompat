@@ -13,9 +13,10 @@ template check_is_this_file_result(s: string) =
   check s.lastPathPart.startsWith"t_others"
   # XXX: renaming this file requires update string above
 
-test "os":
+test "os": 
   check_is_this_file_result getAppFilenameCompat()
   check fileExistsCompat currentSourcePath()
+  check isAbsoluteCompat getCurrentDirCompat()
 
 test "cmdline":
   check_is_this_file_result paramStrCompat(0)

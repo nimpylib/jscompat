@@ -57,6 +57,8 @@ when defined(js):
   genXorDeno fsOrDeno, "fs"
   genXorDeno ttyOrDeno, "tty"  # for .isatty
   genX fsMod, "fs"
+  genX pathMod, "path"
+  genX constantsMod, "constants"
 
   template jsFuncExpr(js, name: string): untyped{.dirty.} =
     js & '.' & name & "(@)"
@@ -68,4 +70,5 @@ when defined(js):
       jsFuncExpr(jsExp, s)
   genPragma fsDeno, fsOrDenoInJs
   genPragma fs, fsModInJs
+  genPragma node_path, pathModInJs
 
