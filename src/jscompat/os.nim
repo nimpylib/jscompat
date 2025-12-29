@@ -3,7 +3,7 @@ import ./private/utils
 
 import std/os
 
-genCompatStrImportJs getCurrentDir: "process.cwd"
+genCompatStrImportJs getCurrentDir: "process.cwd()"
 
 genCompatStrImportJs getAppFilename: "process.argv[1]"
 
