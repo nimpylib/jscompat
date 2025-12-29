@@ -2,27 +2,21 @@
 when defined(js):
   import std/jsffi
   import ./dispatch
+  import ./denoAttrs
   const
     InNodeJs = defined(nodejs)
-  template importjsObject(econsts; name: string) =
-    #when InNodeJs:
-    #  let econsts = require(cstring name)
-    #else:
-      let econsts{.importjs: exprImportNode(name).}: JsObject
-  template importjsObject(econsts) = importjsObject(econsts, astToStr(econsts))
 
+  let noConstants = constantsMod.isNull
   template from_js_constImpl[T](econsts; name; defVal: T): T =
-    bind isUndefined, to, `[]`
-    let n = econsts[astToStr(name)]
-    if n.isUndefined: defVal else: n.to(T)
-
-  importjsObject constants
+    bind isUndefined, to, `[]`, noConstants
+    let n{.importjs: constantsModInJs & '.' & astToStr(name).}: JsObject
+    if noConstants or n.isUndefined: defVal else: n.to(T)
 
   template from_js_const*[T](name; defval: T): T =
-    bind constants
-    from_js_constImpl(constants, name, defval)
+    bind constantsMod
+    from_js_constImpl(constantsMod, name, defval)
 
-  importjsObject os, "os"
-  let os_constants* = os["constants"]
-  assert not os_constants.isUndefined
+  let os_constants*{.importNode(os, constants).}: JsObject
+  when defined(nodejs):
+    assert not os_constants.isUndefined
 
