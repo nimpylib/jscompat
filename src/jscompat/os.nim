@@ -1,7 +1,15 @@
 
 import ./private/utils
 
-import std/os
+
+
+when defined(wasi):
+  import ./cmdline_wasi
+  proc getAppFilename: string = paramStr 0
+
+  import std/os except getAppFilename
+else:
+  import std/os
 
 genCompatStrImportJs getCurrentDir: "process.cwd()"
 

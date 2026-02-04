@@ -8,7 +8,10 @@ when defined(js):
 
   const argsStart = 2
 
-import std/cmdline
+when defined(wasi):
+  import ./cmdline_wasi
+else:
+  import std/cmdline
 
 genCompatFromOrJs paramCount: argv.len - argsStart
 
