@@ -33,22 +33,30 @@ when defined(js):
   #NOTE: As ./compat.nim uses js top-level import, so the whole JS file is
   # ES module, thus `require` is not defined, which we cannot use here.
   #template genX(name; s){.dirty.} =
-  func exprImportNode*(s: string): string =
-    ## internal. unstable.
-    when defined(nodejs) and not defined(esModule):
+  when defined(nodejs) and not defined(esModule):
+    proc exprImportNode*(s: string): string =
       result = "require('" & s & "')"
+    template collectImportNode* = discard
+  else:
+    import std/sets
+    import std/macros
+    from std/strutils import format
+    var imports{.compileTime.}: HashSet[string]
+    proc exprImportNode*(s: string): string =
+      result = s
+      imports.incl s
+    when defined(karax) or defined(jsAlert):
+      template collectImportNode* = discard
     else:
-      result = "import('node:"&s&"')"
-      #XXX: In nodejs, if `require` is used, top-level `await import` causes:
-      #  `SyntaxError: Unexpected token 'import'`
-      #   so I wrap `import` with `()`.
-      # `await` followed by '(' is allowed by nodejs iff in ESM mode
-      # (In CommonJs mode, such notation seems to be evaluated as function call:
-      # `ReferenceError: await is not defined`
-      # )
-      when true: #defined(jscompat_node_esm):
-        result = '('&result&')'
-      result = "(await "&result&")"
+      macro collectImportNode* =
+        var res = """/*INCLUDESECTION*/
+    """
+        for modu in imports:
+          res.add "import * as $1 from 'node:$1'\n".format modu
+        result = quote do:
+          {.emit: `res`.}
+        imports.clear()
+
   template genXorDeno(name; s){.dirty.} =
     bindExpr[] name, nodeno(exprImportNode s, "Deno", "null")
   template genX(name; s){.dirty.} =
@@ -71,4 +79,6 @@ when defined(js):
   genPragma fsDeno, fsOrDenoInJs
   genPragma fs, fsModInJs
   genPragma node_path, pathModInJs
+
+  collectImportNode()
 

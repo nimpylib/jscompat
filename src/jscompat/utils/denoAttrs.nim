@@ -15,6 +15,7 @@ when defined(js):
   when not defined(nodejs):
     from std/strutils import `%`
   import ./dispatch
+  export collectImportNode
   proc importByNodeOrDenoImpl(def: NimNode; nodeExpr, denoExpr: string): NimNode =
     var
       nodeExpr = nodeExpr
@@ -60,7 +61,7 @@ when defined(js):
       denoExpr="Deno."&denoAttr
     )
 
-  func requireExpr(module: string): string = exprImportNode module
+  proc requireExpr(module: string): string = exprImportNode module
   macro importDenoOrNodeMod*(modInNode, attr; def) =
     importDenoOrImpl(def, requireExpr $modInNode, attr)
   macro importInNodeModOrDeno*(modInNode, attrNode, attrDeno; def) =
