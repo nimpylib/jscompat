@@ -6,7 +6,7 @@ import std/[strutils, os]
 import unittest
 
 import jscompat/[
-  os, cmdline, syncio
+  os, cmdline, syncio, envvars,
 ]
 
 template check_is_this_file_result(s: string) =
@@ -28,4 +28,10 @@ test "syncio":
   expect IOError:
     discard readFileCompat "<?:*>"
  
+test "envvars":
+  const
+    name = "NIMPYLIB_JSCOMPAT_T_ENVVARS"
+    val = "12"
+  putEnvCompat(name, val)
+  check getEnvCompat(name) == val
 
