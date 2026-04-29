@@ -1,4 +1,5 @@
 /testresults/
+/bin/
 nimcache/
 htmldocs/
 !/tests/
