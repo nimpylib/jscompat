@@ -2,7 +2,7 @@
 import ./private/utils
 when defined(js):
   import std/jsffi
-  import ./utils/[dispatch, oserr]
+  import ./utils/[dispatch, oserr, jspure]
   proc bufferAsString(buf: JsObject): string =
     let n = buf.length.to int
     when declared(newStringUninit):
@@ -20,8 +20,8 @@ when defined(js):
     if err != 0:
       raise newException(IOError, msg)
   # without {'encoding': ...} option, Buffer returned
-  proc readFileSync(p: cstring): JsObject{.importjs: fsDeno"readFileSync".}
-  proc writeFileSync(p, data: cstring){.importjs: fsDeno"writeFileSync".}
+  proc readFileSync(p: cstring): JsObject{.handleOnPureJsOrimportjs: fsDeno"readFileSync".}
+  proc writeFileSync(p, data: cstring){.handleOnPureJsOrimportjs: fsDeno"writeFileSync".}
   # there is existsSync in deno's @std/fs, but that must be added as a JSR dependency
 
 when defined(nimPreviewSlimSystem):

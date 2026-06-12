@@ -2,6 +2,7 @@
 ## this module's APIs is unstable
 when defined(js):
   import std/jsffi
+  import ./jspure
   export jsffi
   var ibindExpr{.compileTime.}: int
   template bindExpr*[T=JsObject](asIdent; exprOfJs: string) =
@@ -57,10 +58,14 @@ when defined(js):
           {.emit: `res`.}
         imports.clear()
 
+  template mapPureJs(exp): untyped{.dirty.} =
+    when Jspure: "null"
+    else: exp
+
   template genXorDeno(name; s){.dirty.} =
-    bindExpr[] name, nodeno(exprImportNode s, "Deno", "null")
+    bindExpr[] name, mapPureJs nodeno(exprImportNode s, "Deno", "null")
   template genX(name; s){.dirty.} =
-    bindExpr[] name, ifOr(notNodeInJs && notDenoInJs, "null", exprImportNode s)
+    bindExpr[] name, mapPureJs ifOr(notNodeInJs && notDenoInJs, "null", exprImportNode s)
   # using `await import` without paran will causes js SyntaxError on non-nodejs
   genXorDeno fsOrDeno, "fs"
   genXorDeno ttyOrDeno, "tty"  # for .isatty
