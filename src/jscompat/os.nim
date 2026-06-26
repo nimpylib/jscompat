@@ -17,12 +17,21 @@ genCompatStrImportJs getAppFilename: "process.argv[1]"
 
 when Js:
   import ./utils/[dispatch, jspure]
-  proc existsSync(fp: cstring): bool{.handleOnPureJsOrimportjs: fs"existsSync".}
-  #XXX: not suitable but cannot found another handy api
+  import std/jsffi
+  proc statSync(fp: cstring): JsObject{.handleOnPureJsOrimportjs: fs"statSync".}
+  template gen(name, fun) {.dirty.} =
+    proc name(fp: cstring): bool =
+      var statRes: JsObject
+      {.emit: [  #" <- lint
+        "try{", statRes, "=", statSync(fp), "}catch{return false}"].}
+      statRes.fun().to bool
+  gen fileExistsJs, isFile
+  gen dirExistsJs, isDirectory
 #proc fileExistsCompat*(fp: string): bool = jsOr existsSync(cstring fp), fileExists(fp)
   proc path_isAbsolute(path: cstring): bool{.handleOnPureJsOrimportjs: node_path"isAbsolute".}
 
-proc fileExists(filename: string): bool{.toCompatUseStdOrJs.} = existsSync cstring filename
+proc fileExists(filename: string): bool{.toCompatUseStdOrJs.} = fileExistsJs cstring filename
+proc  dirExists(filename: string): bool{.toCompatUseStdOrJs.} =  dirExistsJs cstring filename
 
 
 const

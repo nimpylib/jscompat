@@ -16,6 +16,9 @@ template check_is_this_file_result(s: string) =
 test "os": 
   check_is_this_file_result getAppFilenameCompat()
   check fileExistsCompat currentSourcePath()
+  check not fileExistsCompat "."
+  check not dirExistsCompat currentSourcePath()
+  check dirExistsCompat "."
   check isAbsoluteCompat getCurrentDirCompat()
 
 test "cmdline":
