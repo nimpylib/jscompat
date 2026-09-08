@@ -1,28 +1,35 @@
 
 
 import std/jsffi
+import ./private/jsffiMacros
 type
   ArrayBuffer*{.importjs.} = distinct JsObject
+  SharedArrayBuffer*{.importjs.} = distinct JsObject
   ArrayBufferOptions*{.pure.} = ref object
     maxByteLength*: cint
-proc newArrayBuffer*(length: cint, options = ArrayBufferOptions{}): ArrayBuffer {.importjs: "new ArrayBuffer(@)".}
 
-using self: ArrayBuffer
-template genAttr(name; R: untyped = JsObject) {.dirty.} =
-  func name*(self): R{.importjs: "(#)." & astToStr(name).}
-
-func isView*(self): bool {.importcpp.}
+using self: ArrayBuffer|SharedArrayBuffer
 
 genAttr byteLength, cint
 genAttr maxByteLength, cint
-genAttr detached, bool
-genAttr resizable, bool
-
-proc resize*(self; newLength: cint) {.importcpp.}
-
-func slice*(self; start = cint 0, `end` = cint self.byteLength): ArrayBuffer {.importcpp.}
 
 func len*(self): int = self.byteLength.int
+
+using self: ArrayBuffer
+genAttr detached, bool
+genAttr resizable, bool
+func isView*(self): bool {.importcpp.}
+proc resize*(self; newLength: cint) {.importcpp.}
+func slice*(self; start = cint 0, `end` = cint self.byteLength): ArrayBuffer {.importcpp.}
+
+using self: SharedArrayBuffer
+genAttr growable, bool
+proc grow*(self; newLength: cint) {.importcpp.}
+func slice*(self; start = cint 0, `end` = cint self.byteLength): SharedArrayBuffer {.importcpp.}
+
+
+genNew ArrayBuffer(length: cint, options = ArrayBufferOptions{})
+genNew SharedArrayBuffer(length: cint, options = ArrayBufferOptions{})
 
 when isMainModule:
   assert 8 == len newArrayBuffer(8)

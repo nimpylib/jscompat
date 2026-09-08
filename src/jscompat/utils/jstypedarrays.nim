@@ -4,6 +4,7 @@ import std/jsffi
 
 import ../private/arrayCommon
 import ./jsarraybuffer
+import ./private/jsffiMacros
 
 type
   TypedArray*[T] = distinct JsObject
@@ -11,8 +12,6 @@ type
 genBasicArrOps TypedArray
 
 using self: TypedArray
-template genAttr(name; R: untyped = JsObject) {.dirty.} =
-  func name*(self): R{.importjs: "(#)." & astToStr(name).}
 genAttr buffer, ArrayBuffer
 genAttr byteLength, cint
 genAttr byteOffset, cint
@@ -32,8 +31,8 @@ proc genNewTAAux(T: NimNode, symName = capName($T) & "Array"): NimNode =
     func `sym`*(x: cint|TypedArray|ArrayBuffer = 0): TypedArray[`T`]{.`pra`.}
     func `sym`*(x: Natural): TypedArray[`T`] = `sym` x.cint
     func `sym`*(arrayLike: JsObject): TypedArray[`T`]{.`pra`.}
-    func `sym`*(buffer: ArrayBuffer, byteOffset: cint): TypedArray[`T`]{.`pra`.}
-    func `sym`*(buffer: ArrayBuffer, byteOffset, length: cint): TypedArray[`T`]{.`pra`.}
+    func `sym`*(buffer: ArrayBuffer|SharedArrayBuffer, byteOffset: cint): TypedArray[`T`]{.`pra`.}
+    func `sym`*(buffer: ArrayBuffer|SharedArrayBuffer, byteOffset, length: cint): TypedArray[`T`]{.`pra`.}
     proc `sym`*(x: openArray[`T`]): TypedArray[`T`] =
       result = `sym`(x.len)
       for i, e in x: result[i] = e
