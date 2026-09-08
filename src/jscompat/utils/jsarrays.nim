@@ -1,6 +1,6 @@
 
 import std/jsffi
-import ../private/idxChkUtils
+import ../private/arrayCommon
 
 type JsArray*[T] = distinct JsObject#JsAssoc[int, T]
 
@@ -11,24 +11,11 @@ proc newJsArray*[T](x: openArray[T]): JsArray[T] =
   for i in x: result.add i
 proc newJsArrayFillWithEmpty[T](n: Natural): JsArray[T]{.importjs: "new Array(#)".}
 
+
 using arr: JsArray
-proc len*(arr): int{.importjs: "#.length".}
-proc high*(arr): int = arr.len - 1
-proc toString*(arr): cstring{.importcpp.}
-proc `$`*(arr): string =
-  result.add '['
-  let L = arr.len
-  if L > 0:
-    result.add $arr[0]
-    for i in 1..<L:
-      result.add ", "
-      result.add $arr[i]
-  result.add ']'
 
+genBasicArrOps JsArray
 
-proc contains*[T](arr: JsArray[T]; x: T): bool{.importcpp: "includes".}
-proc `[]`*[T](arr: JsArray[T]; i: int): T{.importcpp: "#[#]", wrapChkIdx.}
-proc `[]=`*[T](arr: JsArray[T]; i: int; x : T){.importcpp: "#[#] = #", wrapChkIdx.}
 proc pop*[T](arr: JsArray[T]): T{.importcpp, wrapChkIdx(0).}
 proc delete*(arr: JsArray; i: int) {.importjs: "#.splice(#, 1)", wrapChkIdx.}
 proc del*(arr: JsArray; i: int) =
@@ -36,35 +23,11 @@ proc del*(arr: JsArray; i: int) =
   discard jsDelete arr[i]
   if arr.len > 0:
     `[]= unchkIdx`(arr, i, arr.pop())
-proc `[]`*[T](arr: JsArray[T]; i: BackwardsIndex): T = arr[arr.len-int(i)]
-proc `[]=`*[T](arr: JsArray[T]; i: BackwardsIndex; x: T) = arr[arr.len-int(i)] = x
 
 proc newJsArray*[T](n: Natural): JsArray[T] =
   result = newJsArrayFillWithEmpty[T](n)
   for i in 0..<n:
     `[]= unchkIdx` result, i, default T
-
-iterator items*[T](arr: JsArray[T]): T =
-  for i in jsffi.items cast[JsObject](arr): yield i.to T
-iterator pairs*[T](arr: JsArray[T]): (int, T) =
-  var i = 0
-  for e in arr:
-    yield (i, e)
-    i.inc
-
-proc `==`*[T](a, b: JsArray[T]): bool =
-  if a.isNull: return b.isNull
-  if b.isNull: return a.isNull
-  if a.len != b.len: return
-  for i, e in a:
-    if e != b[i]: return
-  return true
-
-proc `@`*[T](arr: JsArray[T]): seq[T] =
-  result = (when declared(newSeqUninit): newSeqUninit else: newSeq)[T](arr.len)
-  for i, e in arr:
-    result[i] = e
-
 when isMainModule:
   let oriData = [1, 2, 3, 4]
   let a = newJsArray[int](oriData)

@@ -1,10 +1,17 @@
 
 import std/macros
 from std/strutils import startsWith
+template impl(len, arr, i) =
+  when compileOption("boundChecks"):
+    let L = arr.len
+    if i >= L:
+      raise newException(IndexDefect, formatErrorIndexBound(i, L-1))
 template chkIdx*(arr; i: int) =
-  let L = arr.len
-  if i >= L:
-    raise newException(IndexDefect, formatErrorIndexBound(i, L-1))
+  bind impl
+  impl len, arr, i
+template chkIdx*(arr; i: cint) =
+  bind impl
+  impl length, arr, i
 
 proc wrapChkIdxImpl(i, def: NimNode): NimNode =
   result = newStmtList()
