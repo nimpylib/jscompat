@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.7"
+version       = "0.1.8"
 author        = "litlighilit"
 description   = "Compatible layer for some of Nim's stdlib, for node or deno, as well as WASI"
 license       = "MIT"
