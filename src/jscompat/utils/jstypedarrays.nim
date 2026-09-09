@@ -6,32 +6,35 @@ import ../private/arrayCommon
 import ./jsarraybuffer
 import ./private/jsffiMacros
 
-declareJsType TypedArray[T]:
+declareJsType TypedArray[T: SomeNumber, Buf: ArrayBuffer|SharedArrayBuffer]:
   # `genBasicArrOps` generates others
-  buffer: JsObject  # ArrayBuffer or SharedArrayBuffer
+  buffer: Buf
   byteLength: cint
   byteOffset: cint
 
-genBasicArrOps TypedArray
+type TypedArrayMayShared[T] = TypedArray[T, auto]
+genBasicArrOps TypedArrayMayShared
 
 func capName(s: string): string{.compileTime.} =
   char(s[0].int and ord('_')) & s[1..^1]
 
 proc genNewTAAux(T: NimNode, symName = capName($T) & "Array"): NimNode =
   let
-    typeName = newLit symName
     sym = ident("new" & symName)
     pra = nnkExprColonExpr.newTree(
       ident"importjs",
       newLit("new " & symName & "(@)")
     )
   result = quote do:
-    func `sym`*(x: cint|TypedArray|ArrayBuffer = 0): TypedArray[`T`]{.`pra`.}
-    func `sym`*(x: Natural): TypedArray[`T`] = `sym` x.cint
-    func `sym`*(arrayLike: JsObject): TypedArray[`T`]{.`pra`.}
-    func `sym`*(buffer: ArrayBuffer|SharedArrayBuffer, byteOffset: cint): TypedArray[`T`]{.`pra`.}
-    func `sym`*(buffer: ArrayBuffer|SharedArrayBuffer, byteOffset, length: cint): TypedArray[`T`]{.`pra`.}
-    proc `sym`*(x: openArray[`T`]): TypedArray[`T`] =
+    func `sym`*(x: cint|TypedArray = 0): TypedArray[`T`, ArrayBuffer]{.`pra`.}
+    func `sym`*(x: Natural): TypedArray[`T`, ArrayBuffer] = `sym` x.cint
+    func `sym`*(arrayLike: JsObject): TypedArray[`T`, ArrayBuffer]{.`pra`.}
+    {.push warning[ImplicitDefaultValue]: off.}
+    func `sym`*[Buf: ArrayBuffer|SharedArrayBuffer](
+      buffer: Buf, byteOffset, length: cint|JsObject = jsUndefined
+    ): TypedArray[`T`, Buf]{.`pra`.}
+    {.pop.}
+    proc `sym`*(x: openArray[`T`]): TypedArray[`T`, ArrayBuffer] =
       result = `sym`(x.len)
       for i, e in x: result[i] = e
 macro genNewTA(T: typedesc) = genNewTAAux T

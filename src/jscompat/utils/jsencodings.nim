@@ -33,8 +33,8 @@ proc decode*(self; s: ArrayBuffer|TypedArray|DataView, options: DecodeOptions): 
 using self: TextEncoder
 genNew TextEncoder()
 
-proc encode*(self; s: cstring): TypedArray[uint8] {.importcpp.}
-proc encodeInto*(self; s: cstring, a: TypedArray[uint8]): EncodeIntoResult {.importcpp.}
+proc encode*(self; s: cstring): TypedArray[uint8, ArrayBuffer] {.importcpp.}
+proc encodeInto*(self; s: cstring, a: TypedArray[uint8, ArrayBuffer]): EncodeIntoResult {.importcpp.}
 
 when isMainModule:
   import std/jsconsole

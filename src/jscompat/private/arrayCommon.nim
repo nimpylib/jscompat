@@ -18,7 +18,7 @@ template genBasicArrOps*(JsArray) {.dirty.} =
     result.add ']'
 
   proc indexOf*[T](arr: JsArray[T]; x: T, fromIndex: cint = 0): cint{.importcpp.}
-  proc find*[T](arr: JsArray[T]; x: T, fromIndex: int = 0): int = int arr.indexOf fromIndex.cint
+  proc find*[T](arr: JsArray[T]; x: T, fromIndex: int = 0): int = int arr.indexOf(x, fromIndex.cint)
   proc contains*[T](arr: JsArray[T]; x: T): bool{.importcpp: "includes".}
   proc `[]`*[T](arr: JsArray[T]; i: cint): T{.importcpp: "#[#]", wrapChkIdx.}
   proc `[]=`*[T](arr: JsArray[T]; i: cint; x : T){.importcpp: "#[#] = #;", wrapChkIdx.}
@@ -26,8 +26,13 @@ template genBasicArrOps*(JsArray) {.dirty.} =
   proc `[]`*[T](arr: JsArray[T]; i: int): T = arr[cint i]
   proc `[]=`*[T](arr: JsArray[T]; i: int; x : T) = arr[cint i] = x
 
+  proc slice[T](arr: JsArray[T]; start, stop: int): JsArray[T] {.importcpp.}
+  proc `[]`*[T](arr: JsArray[T]; s: Slice[int]): JsArray[T] = arr.slice(s.a, s.b+1)
+
   proc `[]`*[T](arr: JsArray[T]; i: BackwardsIndex): T = arr[arr.len-int(i)]
   proc `[]=`*[T](arr: JsArray[T]; i: BackwardsIndex; x: T) = arr[arr.len-int(i)] = x
+
+  proc reverse*(arr: JsArray) {.importcpp.}
 
   iterator items*[T](arr: JsArray[T]): T =
     for i in jsffi.items cast[JsObject](arr): yield i.to T

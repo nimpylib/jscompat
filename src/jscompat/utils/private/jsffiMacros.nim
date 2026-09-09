@@ -116,13 +116,12 @@ proc declareJsTypeAux(nameMayWithGenerics, attrs: NimNode): NimNode =
     let attrDef = getAst genAttrWithStr(id, id.strVal, ident typName)
     attrDef.expectKind {nnkProcDef, nnkFuncDef}
     if isGeneric:
+      let param1Type = nnkBracketExpr.newTree(name)
       for T in genericParams:
-        if T.eqIdent typ:
-          let nameGenerics = nnkBracketExpr.newTree name
-          attrDef[2] = nnkGenericParams.newTree newIdentDefs(typ, emptyn)
-          let params = attrDef.nOf(3, nnkFormalParams)
-          params[1][1] = nnkBracketExpr.newTree(name, typ)
-          break
+        param1Type.add T
+      attrDef[2] = generics.copyNimTree
+      let params = attrDef.nOf(3, nnkFormalParams)
+      params[1][1] = param1Type
     result.add attrDef
 
 macro declareJsType*(nameMayWithGenerics; attrs) = declareJsTypeAux nameMayWithGenerics, attrs
