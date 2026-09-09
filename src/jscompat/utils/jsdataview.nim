@@ -2,15 +2,13 @@
 import std/jsffi
 import ./private/jsffiMacros
 import ./jsarraybuffer
-type
-  DataView*[T: ArrayBuffer|SharedArrayBuffer]{.importjs.} = distinct JsObject
+
+declareJsType DataView[T: ArrayBuffer|SharedArrayBuffer]:
+  buffer: T
+  byteLength: cint
+  byteOffset: cint
 
 using self: DataView
-
-proc buffer*[T](self: DataView[T]): T {.importjs: "#.buffer".}
-genAttr byteLength, cint
-genAttr byteOffset, cint
-
 func len*(self): int = self.byteLength.int
 
 genNew DataView[T](buffer: T, byteOffset = cint 0, byteLength = buffer.byteLength)

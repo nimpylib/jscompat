@@ -6,15 +6,13 @@ import ../private/arrayCommon
 import ./jsarraybuffer
 import ./private/jsffiMacros
 
-type
-  TypedArray*[T] = distinct JsObject
+declareJsType TypedArray[T]:
+  # `genBasicArrOps` generates others
+  buffer: JsObject  # ArrayBuffer or SharedArrayBuffer
+  byteLength: cint
+  byteOffset: cint
 
 genBasicArrOps TypedArray
-
-using self: TypedArray
-genAttr buffer, ArrayBuffer
-genAttr byteLength, cint
-genAttr byteOffset, cint
 
 func capName(s: string): string{.compileTime.} =
   char(s[0].int and ord('_')) & s[1..^1]

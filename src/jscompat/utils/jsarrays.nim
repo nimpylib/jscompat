@@ -1,8 +1,9 @@
 
 import std/jsffi
 import ../private/arrayCommon
+import ./private/jsffiMacros
 
-type JsArray*[T] = distinct JsObject#JsAssoc[int, T]
+declareJsType JsArray[T]
 
 proc newJsArray*[T]: JsArray[T]{.importjs: "[@]".}
 proc add*[T](arr: JsArray[T]; x: T){.importcpp: "push".}
