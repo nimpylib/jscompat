@@ -2,7 +2,8 @@
 
 
 import std/jsffi
-import ./private/jsffiMacros
+import ./private/[jsffiMacros, results]
+export results
 import ./[jsdataview, jsarraybuffer, jstypedarrays]
 
 declareJsType TextEncoder:
@@ -18,10 +19,6 @@ declareJsObject TextDecoderOptions:
 
 declareJsObject DecodeOptions:
   stream: bool
-
-declareJsObject EncodeIntoResult:
-  read: cint
-  written: cint
 
 using self: TextDecoder
 genNew TextDecoder(label = cstring"utf-8", options = TextDecoderOptions{})

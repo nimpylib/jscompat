@@ -126,6 +126,11 @@ test "float arrays":
   check f64arr[0] == 1.5
   check f64arr[1] == 2.5
 
+test "Uint8Array methods":
+  let u8arr = newUint8Array([1'u8, 2])
+  check u8arr.toHex == "0102"
+  check u8arr.toBase64 == "AQI="
+
 test "big int arrays":
   let arr = newBigInt64Array([0'i64, 1, 2, -3])
   check arr.len == 4
