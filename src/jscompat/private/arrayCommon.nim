@@ -26,8 +26,14 @@ template genBasicArrOps*(JsArray) {.dirty.} =
   proc `[]`*[T](arr: JsArray[T]; i: int): T = arr[cint i]
   proc `[]=`*[T](arr: JsArray[T]; i: int; x : T) = arr[cint i] = x
 
-  proc slice[T](arr: JsArray[T]; start, stop: int): JsArray[T] {.importcpp.}
-  proc `[]`*[T](arr: JsArray[T]; s: Slice[int]): JsArray[T] = arr.slice(s.a, s.b+1)
+  proc slice*[T](arr: JsArray[T]; start, stop: int): JsArray[T] {.importcpp.}
+  proc `[]`*[T](arr: JsArray[T]; s: Slice[int]): JsArray[T] =
+    bind chkSliceIdx
+    chkSliceIdx(arr, s.a, s.b)
+    arr.slice(s.a, s.b+1)
+  proc `[]`*[T](arr: JsArray[T]; s: HSlice[int, BackwardsIndex]): JsArray[T] =
+    let b = arr.len - int(s.b)
+    arr[s.a..b]
 
   proc `[]`*[T](arr: JsArray[T]; i: BackwardsIndex): T = arr[arr.len-int(i)]
   proc `[]=`*[T](arr: JsArray[T]; i: BackwardsIndex; x: T) = arr[arr.len-int(i)] = x

@@ -13,6 +13,18 @@ template chkIdx*(arr; i: cint) =
   bind impl
   impl length, arr, i
 
+template implSlice(len, arr, a, b) =
+  when compileOption("boundChecks"):
+    if b >= a:
+      let L = arr.len
+      if a < 0 or a >= L:
+        raise newException(IndexDefect, formatErrorIndexBound(a, L-1))
+      elif b >= L:
+        raise newException(IndexDefect, formatErrorIndexBound(L, L-1))
+proc chkSliceIdx*(arr: auto; a, b: int) {.inline.} =
+  bind implSlice
+  implSlice len, arr, a, b
+
 proc wrapChkIdxImpl(i, def: NimNode): NimNode =
   result = newStmtList()
   let
