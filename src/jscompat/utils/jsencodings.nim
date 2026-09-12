@@ -14,11 +14,11 @@ declareJsType TextDecoder:
   ignoreBOM: bool
 
 declareJsObject TextDecoderOptions:
-  fatal: bool
-  ignoreBOM: bool
+  fatal: bool = false
+  ignoreBOM: bool = false
 
 declareJsObject DecodeOptions:
-  stream: bool
+  stream: bool = false
 
 using self: TextDecoder
 genNew TextDecoder(label = cstring"utf-8", options = TextDecoderOptions{})

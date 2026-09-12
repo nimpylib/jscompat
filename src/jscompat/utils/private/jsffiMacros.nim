@@ -133,11 +133,26 @@ macro declareJsObject*(name, attrs) =
     type
       `name`*{.pure.} = ref object
   let fields = newNimNode(nnkRecList, attrs)
+  let emptyn = newEmptyNode()
   for field in attrs:
-    field.expect2Call
-    fields.add newIdentDefs(
-      field[0].postfix"*", field[1]
-    )
+    let def = nnkIdentDefs.newTree field[0].postfix"*"
+    case field.kind:
+    of nnkCall:
+      field.expectLen 2
+      let stm = field[1]
+      stm.expectKind nnkStmtList
+      stm.expectLen 1
+      let rhs = stm[0]
+      if rhs.kind == nnkAsgn:
+        def.add(rhs[0], rhs[1])
+      else:
+        def.add(rhs, emptyn)
+    of nnkAsgn:
+      def.add(emptyn, field[1])
+    else:
+      error "unexpected kind " & $field.kind, field
+
+    fields.add def
   result.nOf(0, nnkTypeDef)
         .nOf(2, nnkRefTy)
         .nOf(0, nnkObjectTy)[2] = fields

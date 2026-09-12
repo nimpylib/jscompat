@@ -62,12 +62,12 @@ genNewTA float64
 
 
 declareJsObject FromBase64Options:
-  alphabet: cstring
-  lastChunkHandling: cstring
+  alphabet: cstring = "base64"
+  lastChunkHandling: cstring = "loose"
 
 declareJsObject ToBase64Options:
-  alphabet: cstring
-  omitPadding: bool # = false
+  alphabet: cstring = "base64"
+  omitPadding: bool = false
 
 type Uint8Array = TypedArray[uint8, ArrayBuffer]
 proc newUint8ArrayFromBase64*(str: cstring; options = FromBase64Options{}): Uint8Array {.importjs: "Uint8Array.fromBase64(@)".}
