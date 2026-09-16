@@ -1,5 +1,14 @@
 
-when defined(js):
+template declarePlainNonAsync* {.dirty.} =
+  template mayAsync*(def): untyped = def
+  template mayAwait*(x): untyped = x
+  template mayWaitFor*(x): untyped = x
+  template mayNewPromise*(x): untyped = x
+  type MayPromise*[T] = T
+
+when not defined(js):
+  declarePlainNonAsync
+else:
   import ./asyncIfJs/js
   type
     MayPromise*[T] = Promise[T]
@@ -18,11 +27,4 @@ when defined(js):
   template mayNewPromise*(x): untyped =
     bind newPromise
     newPromise(x)
-
-else:
-  template mayAsync*(def): untyped = def
-  template mayAwait*(x): untyped = x
-  template mayWaitFor*(x): untyped = x
-  template mayNewPromise*(x): untyped = x
-  type MayPromise*[T] = T
 
