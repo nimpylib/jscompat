@@ -20,6 +20,9 @@ genBasicArrOps TypedArrayMayShared
 func capName(s: string): string{.compileTime.} =
   char(s[0].int and ord('_')) & s[1..^1]
 
+template JsUndefined: JsObject =
+  {.cast(noSideEffect).}:
+    jsUndefined
 proc genNewTAAux(T: NimNode, arrSymName = capName($T)): NimNode =
   let
     symName = arrSymName & "Array"
@@ -34,7 +37,7 @@ proc genNewTAAux(T: NimNode, arrSymName = capName($T)): NimNode =
     func `sym`*(arrayLike: JsObject): TypedArray[`T`, ArrayBuffer]{.`pra`.}
     {.push warning[ImplicitDefaultValue]: off.}
     func `sym`*[Buf: ArrayBuffer|SharedArrayBuffer](
-      buffer: Buf, byteOffset, length: cint|JsObject = jsUndefined
+      buffer: Buf, byteOffset, length: cint|JsObject = JsUndefined
     ): TypedArray[`T`, Buf]{.`pra`.}
     {.pop.}
     proc `sym`*(x: openArray[`T`]): TypedArray[`T`, ArrayBuffer] =
@@ -85,5 +88,10 @@ when isMainModule:
   assert arr.len == 3, $arr.len
   arr[0] = 1
   assert arr[0] == 1
+  func f =
+    # test noSideEffect
+    let arr = newBigInt64Array([0i64, 1, 2])
+    discard newBigInt64Array(arr.buffer)
+  f()
 
 
