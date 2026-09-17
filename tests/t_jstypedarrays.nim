@@ -3,6 +3,7 @@ discard """
 """
 
 import std/unittest
+import std/jsffi
 import jscompat/utils/[jstypedarrays, jsarraybuffer]
 
 test "construction with length":
@@ -128,8 +129,12 @@ test "float arrays":
 
 test "Uint8Array methods":
   let u8arr = newUint8Array([1'u8, 2])
-  check u8arr.toHex == "0102"
-  check u8arr.toBase64 == "AQI="
+  if u8arr.toJs.toHex.isUndefined:
+    skip()
+    # these methods not supported till node25
+  else:
+    check u8arr.toHex == "0102"
+    check u8arr.toBase64 == "AQI="
 
 test "big int arrays":
   let arr = newBigInt64Array([0'i64, 1, 2, -3])
