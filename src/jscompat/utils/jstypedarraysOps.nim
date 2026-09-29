@@ -3,10 +3,10 @@
 import ./jstypedarrays
 import ./jsarraybuffer
 export jstypedarrays
-# XXX: this relies on assumption: Nim string is represeted as
-#  UTF-8 Array[Number] in js.
+# XXX: this relies on assumption: Nim openArray[char] is represeted as
+#  UTF-8 Array[Number] or Uint8[Clamped]Array/Int8Array in js.
 # tho it's correct currently, no gurantee from official.
-proc toUint8Array*(s: string): TypedArray[uint8, ArrayBuffer] {.
+proc toUint8Array*(s: openArray[char]): TypedArray[uint8, ArrayBuffer] {.
   importjs: "Uint8Array.from(#)".}
 
 when not defined(release):
