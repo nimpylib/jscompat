@@ -6,7 +6,7 @@ export defLittleEndian
 type
   NPointer* = ref object of RootObj
   NPointerSingle = ref object of NPointer
-    d: DataView[ArrayBuffer]  ## XXX: impl is unstable, later maybe `ref object`
+    d: DataView[ArrayBuffer]  ## XXX: impl is unstable
   NPointerShared = ref object of NPointer
     d: DataView[SharedArrayBuffer]
 
@@ -52,4 +52,15 @@ genIGS 8
 
 genFGS 64
 genFGS 32
+
+proc asDataView(x: NPointerSingle): DataView[ArrayBuffer] = x.d
+proc asDataView(x: NPointerShared): DataView[SharedArrayBuffer] = x.d
+template asDataViewIt*(x: NPointer; body): untyped {.dirty.} =
+  bind NPointerSingle, NPointerShared, asDataView
+  if x is NPointerSingle:
+    let it = asDataView NPointerSingle(x)
+    body
+  else:
+    let it = asDataView NPointerShared(x)
+    body
 
