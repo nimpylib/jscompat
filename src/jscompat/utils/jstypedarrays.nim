@@ -4,6 +4,7 @@ import std/jsffi
 
 import ../private/arrayCommon
 import ./jsarraybuffer
+import ./[jsarrays, catchJsErr]
 import ./private/[jsffiMacros, results]
 export results
 
@@ -16,6 +17,14 @@ declareJsType TypedArray[T: SomeNumber, Buf: ArrayBuffer|SharedArrayBuffer]:
 
 type TypedArrayMayShared[T] = TypedArray[T, auto]
 genBasicArrOps TypedArrayMayShared
+
+proc subarray*[T; Buf](self: TypedArray[T, Buf], start=cint(0), `end`=self.length
+                       ): TypedArray[T, Buf] {.importcpp, raises: [].} ## \
+  ## the result shares the same buffer with `self`
+proc setImpl(self: TypedArray; arr: JsArray|TypedArray; offset=cint 0) {.importcpp: "set".}
+proc set*(self: TypedArray; arr: JsArray|TypedArray; offset: Natural = 0) = 
+  jsTryAsError IndexDefect:
+    self.setImpl arr, cint offset
 
 func capName(s: string): string{.compileTime.} =
   char(s[0].int and ord('_')) & s[1..^1]

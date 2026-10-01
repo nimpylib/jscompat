@@ -1,8 +1,10 @@
 
+import ../utils/catchJsErr
 import ./idxChkUtils
 export idxChkUtils
 
 template genBasicArrOps*(JsArray) {.dirty.} =
+  bind jsTryAsError
   proc length*(arr: JsArray): cint{.importjs: "#.length".}
   proc len*(arr: JsArray): int {.inline.} = arr.length.int
   proc high*(arr: JsArray): int = arr.len - 1
@@ -17,8 +19,38 @@ template genBasicArrOps*(JsArray) {.dirty.} =
         result.add $arr[i]
     result.add ']'
 
+  type JsCb[T, Arr, R] = proc (element: T, idx: cint, arr: Arr): R
+  template gen(nimName, jsName, R; CbR: untyped = R) {.dirty.} =
+    proc jsName*[T](arr: JsArray[T];
+      callbackFn: JsCb[T, typeof(arr), CbR],
+      thisArg: JsObject = jsUndefined): R {.importcpp.}
+    proc nimName*[T](arr: JsArray[T], cb: proc(ele: T) {.closure.}): R =
+      arr.jsName proc (element: T, _: cint, _: typeof(arr)) =
+        cb(element)
+  gen all, every: bool
+  gen any, some: bool
+  gen filter, filter, typeof(arr), bool
+  gen map, map, typeof(arr), T
+  proc findIndex*[T](arr: JsArray[T]; cb: JsCb[T, typeof(arr), bool]): cint {.importcpp.}
+  proc findLastIndex*[T](arr: JsArray[T]; cb: JsCb[T, typeof(arr), bool]): cint {.importcpp.}
+  proc join*[T](arr: JsArray[T]; sep: cstring): cstring {.importcpp.}
+  proc join*[T](arr: JsArray[T]; sep=""): string =
+    ##JS-DIFF: sep=","
+    for c in arr.join cstring sep:
+      result.add c
+  
+  type ReduceCb[T, Arr] = proc (accu, curVal: T, curIdx: int, arr: Arr): T
+  proc reduce*[T](arr: JsArray[T]; callbackFn: ReduceCb[T, typeof(arr)],
+                  init: T|JsObject = jsUndefined): T {.importcpp.}
+  proc reduceRight*[T](arr: JsArray[T]; callbackFn: ReduceCb[T, typeof(arr)],
+                  init: T|JsObject = jsUndefined): T {.importcpp.}
+
+  # std/sequtils foldl, foldr works for JsArray
+
   proc indexOf*[T](arr: JsArray[T]; x: T, fromIndex: cint = 0): cint{.importcpp.}
   proc find*[T](arr: JsArray[T]; x: T, fromIndex: int = 0): int = int arr.indexOf(x, fromIndex.cint)
+  proc lastIndexOf*[T](arr: JsArray[T]; x: T, fromIndex: cint = 0): cint{.importcpp.}
+  proc rfind*[T](arr: JsArray[T]; x: T, fromIndex: int = 0): int = int arr.lastIndexOf(x, fromIndex.cint)
   proc contains*[T](arr: JsArray[T]; x: T): bool{.importcpp: "includes".}
   proc `[]`*[T](arr: JsArray[T]; i: cint): T{.importcpp: "#[#]", wrapChkIdx.}
   proc `[]=`*[T](arr: JsArray[T]; i: cint; x : T){.importcpp: "#[#] = #;", wrapChkIdx.}
@@ -38,7 +70,23 @@ template genBasicArrOps*(JsArray) {.dirty.} =
   proc `[]`*[T](arr: JsArray[T]; i: BackwardsIndex): T = arr[arr.len-int(i)]
   proc `[]=`*[T](arr: JsArray[T]; i: BackwardsIndex; x: T) = arr[arr.len-int(i)] = x
 
+  proc fillImpl[T](arr: JsArray[T]; x: T, start=0, `end` = arr.len
+                         ): typeof(arr) {.discardable, importcpp: "fill".}
+  proc fill*[T](arr: JsArray[T]; start, `end`: int, x: T) =
+    arr.fillImpl x, start, `end`
+  proc fill*[T](arr: JsArray[T]; x: T) = arr.fillImpl x
+
+  proc withImpl[T](arr: JsArray[T]; index: cint, x: T): typeof(arr) {.importcpp: "with".}
+  proc with*[T](arr: JsArray[T]; index: int, x: T): typeof(arr) =
+    jsTryAsError IndexError: arr.withImpl cint index, x
+
   proc reverse*(arr: JsArray) {.importcpp.}
+  proc reversed*[A: JsArray](arr: A): A {.importcpp: "toReversed".}
+  #NOTE: JsArray's sort() (without compareFn given) uses
+  # `(a, b: T) => a.toString().cmp b.toString()  (against utf-16 codepoints)
+  proc sort*[T](arr: JsArray[T]; compareFn = cmp[T]) {.importcpp.}
+  proc sorted*[T](arr: JsArray[T]; compareFn = cmp[T]
+                    ): typeof(arr) {.importcpp: "toSorted".}
 
   iterator items*[T](arr: JsArray[T]): T =
     for i in jsffi.items cast[JsObject](arr): yield i.to T

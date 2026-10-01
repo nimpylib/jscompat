@@ -114,6 +114,23 @@ test "view over ArrayBuffer with offset and length":
   arr[0] = 1234
   check arr[0] == 1234
 
+test "method: .set":
+  let arr = newInt16Array(4)
+  let arr1 = newInt16Array([int16 1, 2])
+  arr.set arr1, 1
+  check arr == newInt16Array [int16 0, 1, 2, 0]
+  expect IndexDefect:
+    arr.set arr1, 3
+
+test "method: .subarray":
+  let ab = newArrayBuffer(16)
+  let arr = newInt16Array(ab)
+  check arr.subarray().buffer == ab
+
+test "method: .sort":
+  let arr = newInt16Array([int16 3, 5, 1])
+  check arr.sorted() == newInt16Array [int16 1, 3, 5]
+
 test "uint arrays":
   let arr = newUint32Array([0xdeadbeef'u32, 42'u32])
   check arr[0] == 0xdeadbeef'u32

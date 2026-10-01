@@ -7,7 +7,8 @@ template jsTryCatchE*(body, catchBody) {.dirty.} =
   catchBody
   {.emit: "}".}
 
-template jsTryAsIOError*(body) {.dirty.} =
+template jsTryAsError*(Exc: typedesc[Exception]; body) {.dirty.} =
+  bind jsTryCatchE
   var failed = false
   var msg: cstring
   jsTryCatchE:
@@ -16,9 +17,13 @@ template jsTryAsIOError*(body) {.dirty.} =
     failed = true
     {.emit: [msg, " = e.message ?? String(e);"].}
   if failed:
-    raise newException(IOError, $msg)
+    raise newException(Exc, $msg)
+template jsTryAsIOError*(body) {.dirty.} =
+  bind jsTryAsError
+  jsTryAsError IOError, body
 
 template jsTryDiscard*(body) {.dirty.} =
+  bind jsTryCatchE
   jsTryCatchE:
     body
   do:
