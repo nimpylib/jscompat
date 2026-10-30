@@ -21,8 +21,8 @@ genBasicArrOps TypedArrayMayShared
 proc subarray*[T; Buf](self: TypedArray[T, Buf], start=cint(0), `end`=self.length
                        ): TypedArray[T, Buf] {.importcpp, raises: [].} ## \
   ## the result shares the same buffer with `self`
-proc setImpl(self: TypedArray; arr: JsArray|TypedArray; offset=cint 0) {.importcpp: "set".}
-proc set*(self: TypedArray; arr: JsArray|TypedArray; offset: Natural = 0) = 
+proc setImpl(self: TypedArray; arr: JsArray|TypedArrayMayShared; offset=cint 0) {.importcpp: "set".}
+proc set*(self: TypedArray; arr: JsArray|TypedArrayMayShared; offset: Natural = 0) = 
   jsTryAsError IndexDefect:
     self.setImpl arr, cint offset
 

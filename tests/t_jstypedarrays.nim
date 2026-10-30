@@ -121,6 +121,17 @@ test "method: .set":
   check arr == newInt16Array [int16 0, 1, 2, 0]
   expect IndexDefect:
     arr.set arr1, 3
+  
+  let shared = newSharedArrayBuffer(2*2)
+  let arr2 = newInt16Array(shared)
+  arr2[0] = 3
+  arr2[1] = 4
+  arr.set arr2, 2
+  check arr == newInt16Array [int16 0, 1, 3, 4]
+
+  # test SharedXxx.set Xxx
+  arr2.set arr1
+  check arr2 == arr1
 
 test "method: .subarray":
   let ab = newArrayBuffer(16)
