@@ -18,7 +18,7 @@ declareJsType TypedArray[T: SomeNumber, Buf: ArrayBuffer|SharedArrayBuffer]:
 type TypedArrayMayShared[T] = TypedArray[T, auto]
 genBasicArrOps TypedArrayMayShared
 
-proc subarray*[T; Buf](self: TypedArray[T, Buf], start=cint(0), `end`=self.length
+proc subarray*[T; Buf](self: TypedArray[T, Buf], start=cint(0), `end`: cint=self.length
                        ): TypedArray[T, Buf] {.importcpp, raises: [].} ## \
   ## the result shares the same buffer with `self`
 proc setImpl(self: TypedArray; arr: JsArray|TypedArrayMayShared; offset=cint 0) {.importcpp: "set".}
