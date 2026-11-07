@@ -9,6 +9,7 @@ const
   InNodeJs* = defined(nodejs)
 
 import ./consts
+import ./catchJsErr
 
 const DEF_INT = low(int)
 let
@@ -24,62 +25,57 @@ proc jsErrnoMsg*(errorCode: OSErrorCode): string =
   else: "<unmapped error msg yet>"
 
 
-template catchJsErrAsCode*(doBody: static string): int =
-  var
-    res: cint = 0
-  {.emit: ["try{", doBody, "} catch(e) {",
-      res, " = -e.errno; }"
-  #" <- for code lint
-  ].}
-  int -res # nodejs's errno is oppsite?
+template st {.dirty.} =
+  {.emit: [`res@jscompat`, " = -e.errno;"].}
+
+template catchJsErrCodeToRes(doBody; exceptDo: untyped = st): cint {.dirty.} =
+  bind jsTryCatchE
+  block:
+    # we use `...` to manually "genSym"
+    var `res@jscompat`: cint = 0
+    jsTryCatchE(doBody, exceptDo)
+    `res@jscompat`
+
+template catchJsErrCodeToResAndMsg(errMsg: var string; doBody): int =
+  bind catchJsErrCodeToRes, st
+  block:
+    var jsRes: cstring
+    let res = catchJsErrCodeToRes(doBody):
+      st
+      {.emit: [jsRes, " = e.message;"].}
+    if res != 0: errMsg = $jsRes
+    res
+
+template callJs(prc: proc()) =
+  {.emit: [prc, "();"].}
+
+
+template catchJsErrAsCode*(doBodyS: static string): cint =
+  bind catchJsErrCodeToRes
+  catchJsErrCodeToRes:
+    {.emit: doBodyS.}
 
 template catchJsErrAsCode*(prc: proc ()): cint =
-  var res: cint = 0
-  block:
-    {.emit: ["try{", prc, "();",
-    "} catch(e) {",
-        res, """= -e.errno;
-    }
-    """].}
-    #"""] <- for code lint
-    res
+  bind catchJsErrCodeToRes, callJs
+  catchJsErrCodeToRes:
+    callJs prc
 
 template catchJsErrAsCode*(doBody): cint =
   bind catchJsErrAsCode
   proc temp{.genSym.} = doBody
   catchJsErrAsCode(prc=temp)
 
-template catchJsErrAsCode*(errMsg: var string; doBody: static string): cint =
-  var
-    jsRes: cstring
-    res: cint = 0
-  {.emit: ["try{", doBody, """
-  } catch(e) {
-  """, res,  "= -e.errno;",
-       jsRes,"""= e.message;
-  }
-  """].}
-  #"""] <- for code lint
-  if res != 0: errMsg = $jsRes
-  res
+template catchJsErrAsCode*(errMsg: var string; doBodyS: static string): cint =
+  bind catchJsErrCodeToResAndMsg
+  catchJsErrCodeToResAndMsg errMsg:
+    {.emit: doBodyS.}
 
 template catchJsErrAsCode*(errMsg: var string; prc: proc): cint =
-  var
-    jsRes: cstring
-    res: cint = 0
-  block:
-    {.emit: ["try{", prc, """();
-    } catch(e) {
-    """,res, " = -e.errno;",
-        jsRes,"""= e.message;
-    }
-    """].}
-    #"""] <- for code lint
-    if res != 0: errMsg = $jsRes
-    res
+  bind catchJsErrCodeToResAndMsg, callJs
+  catchJsErrCodeToResAndMsg errMsg:
+    callJs prc
 
 template catchJsErrAsCode*(errMsg: var string; doBody): cint =
   proc temp = doBody
   catchJsErrAsCode errMsg, prc=temp
-
 
