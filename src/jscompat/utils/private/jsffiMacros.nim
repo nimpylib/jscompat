@@ -80,6 +80,7 @@ proc nOf(e: NimNode, i: int, k: NimNodeKind): NimNode =
   result.expectKind k
 
 proc declareJsTypeAux(nameMayWithGenerics, attrs: NimNode): NimNode =
+  let Js = bindSym"JsObject"
   let emptyn = newEmptyNode()
   let isGeneric = nameMayWithGenerics.kind == nnkBracketExpr
   let name = if isGeneric:
@@ -89,7 +90,7 @@ proc declareJsTypeAux(nameMayWithGenerics, attrs: NimNode): NimNode =
   result = newStmtList()
 
   let typDefSect = quote do:
-    type `name`*{.importjs.} = distinct JsObject
+    type `name`*{.importjs.} = ref object of `Js`
 
   var generics = emptyn
   var genericParams: seq[NimNode]
@@ -129,9 +130,10 @@ macro declareJsType*(nameMayWithGenerics) =
   declareJsTypeAux nameMayWithGenerics, newEmptyNode()
 
 macro declareJsObject*(name, attrs) =
+  let Js = bindSym"JsObject"
   result = quote do:
     type
-      `name`*{.pure.} = ref object
+      `name`*{.pure.} = ref object of `Js`
   let fields = newNimNode(nnkRecList, attrs)
   let emptyn = newEmptyNode()
   for field in attrs:
