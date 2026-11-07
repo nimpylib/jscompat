@@ -1,17 +1,16 @@
 
 import std/jsffi
-import ../private/arrayCommon
+import ../private/[arrayCommon, ffiGen]
 import ./private/jsffiMacros
 
-declareJsType JsArray[T]
+declareJsType Array[T]
 
-proc newJsArray*[T]: JsArray[T]{.importjs: "[@]".}
+type JsArray*[T] = Array[T]
+proc newJsArray*[T=JsObject]: JsArray[T]{.importjs: "[@]".}
 proc add*[T](arr: JsArray[T]; x: T){.importcpp: "push".}
-proc newJsArray*[T](x: openArray[T]): JsArray[T] =
-  result = newJsArray[T]()
-  for i in x: result.add i
-proc newJsArrayFillWithEmpty[T](n: Natural): JsArray[T]{.importjs: "new Array(#)".}
+proc newJsArrayUninit*[T](n: Natural): JsArray[T]{.importjs: "new Array(#)".}  ## Fill with empty slots
 
+genXIsX Array
 
 using arr: JsArray
 
@@ -26,16 +25,23 @@ proc del*(arr: JsArray; i: int) =
     `[]= unchkIdx`(arr, i, arr.pop())
 
 proc newJsArray*[T](n: Natural): JsArray[T] =
-  result = newJsArrayFillWithEmpty[T](n)
+  result = newJsArrayUninit[T](n)
   for i in 0..<n:
     `[]= unchkIdx` result, i, default T
+proc newJsArray*[T](x: openArray[T]): JsArray[T] =
+  result = newJsArrayUninit[T](x.len)
+  for i, e in x:
+    `[]= unchkIdx` result, i, e
+
 when isMainModule:
+  assert newJsArray[]().len == 0
+
   let oriData = [1, 2, 3, 4]
-  let a = newJsArray[int](oriData)
+  let a = newJsArray(oriData)
 
   import std/sequtils
 
-  assert a == newJsArray[int](toSeq 1..4)
+  assert a == newJsArray(toSeq 1..4)
   assert @a == @oriData
   a[0] = 10
   assert a[0] == 10
