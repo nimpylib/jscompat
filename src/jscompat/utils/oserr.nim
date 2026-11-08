@@ -61,9 +61,8 @@ template catchJsErrAsCode*(prc: proc ()): cint =
     callJs prc
 
 template catchJsErrAsCode*(doBody): cint =
-  bind catchJsErrAsCode
-  proc temp{.genSym.} = doBody
-  catchJsErrAsCode(prc=temp)
+  bind catchJsErrCodeToRes
+  catchJsErrCodeToRes doBody
 
 template catchJsErrAsCode*(errMsg: var string; doBodyS: static string): cint =
   bind catchJsErrCodeToResAndMsg
@@ -76,6 +75,6 @@ template catchJsErrAsCode*(errMsg: var string; prc: proc): cint =
     callJs prc
 
 template catchJsErrAsCode*(errMsg: var string; doBody): cint =
-  proc temp = doBody
-  catchJsErrAsCode errMsg, prc=temp
+  bind catchJsErrCodeToResAndMsg
+  catchJsErrCodeToResAndMsg errMsg, doBody
 
