@@ -9,7 +9,7 @@ const
   InNodeJs* = defined(nodejs)
 
 import ./consts
-import ./catchJsErr
+import ./private/catchJsErrAux
 
 const DEF_INT = low(int)
 let
@@ -25,8 +25,17 @@ proc jsErrnoMsg*(errorCode: OSErrorCode): string =
   else: "<unmapped error msg yet>"
 
 
+const fallbackV = low cint
+proc isErrnoSet*(e: cint): bool =
+  ## internal.
+  e != 0 and e != fallbackV
+
 template st {.dirty.} =
-  {.emit: [`res@jscompat`, " = -e.errno;"].}
+  bind fallbackV
+  {.emit: [`res@jscompat`, " = (-e.errno)",
+    # without following, res may become NaN due to `-undefined`
+    "?? ", fallbackV, ";"
+  ].}
 
 template catchJsErrCodeToRes(doBody; exceptDo: untyped = st): cint {.dirty.} =
   bind jsTryCatchE
@@ -43,7 +52,7 @@ template catchJsErrCodeToResAndMsg(errMsg: var string; doBody): int =
     let res = catchJsErrCodeToRes(doBody):
       st
       {.emit: [jsRes, " = e.message;"].}
-    if res != 0: errMsg = $jsRes
+    if res.isErrnoSet: errMsg = $jsRes
     res
 
 template callJs(prc: proc()) =
