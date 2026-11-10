@@ -6,7 +6,7 @@ import std/[strutils, os]
 import unittest
 
 import jscompat/[
-  os, cmdline, syncio, envvars,
+  os, cmdline, syncio, envvars, oserrors,
 ]
 
 template check_is_this_file_result(s: string) =
@@ -25,11 +25,13 @@ test "cmdline":
   check_is_this_file_result paramStrCompat(0)
   check commandLineParams().len == 0
 
+proc readNonExisting =
+  expect IOError:
+    discard readFileCompat "<?:*>"
 test "syncio":
   let content = readFileCompat currentSourcePath()
   check content.startsWith "discard"
-  expect IOError:
-    discard readFileCompat "<?:*>"
+  readNonExisting()
  
 test "envvars":
   const
@@ -37,4 +39,10 @@ test "envvars":
     val = "12"
   putEnvCompat(name, val)
   check getEnvCompat(name) == val
+
+test "oserrors":
+  readNonExisting()
+  let e = osLastErrorCompat()
+  check e.ord != 0
+  check osErrorMsgCompat(e).len > 0
 
