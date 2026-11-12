@@ -1,5 +1,9 @@
 
-
+import std/jsffi
+import pkg/handy_sugars/assumes
+import pkg/errno
+import pkg/jsbuiltins/[denoDetect,
+                       consts, catchJsErr]
 when NimMajor > 1:
   from std/oserrors import OSErrorCode
 else:
@@ -8,34 +12,46 @@ else:
 const
   InNodeJs* = defined(nodejs)
 
-import ./consts
-import ./private/catchJsErrAux
+when not InNodeJs:
+  import std/tables
 
 const DEF_INT = low(int)
-let
-  ErrExist* = from_js_const(EEXIST, DEF_INT)
-  ErrNoent* = from_js_const(ENOENT, DEF_INT)
-  ErrIsdir* = from_js_const(EISDIR, DEF_INT)
 
-proc jsErrnoMsg*(errorCode: OSErrorCode): string =
-  let ie = errorCode.int
-  if ie == ErrExist: "File exists"
-  elif ie == ErrNoent: "No such file or directory"
-  elif ie == ErrIsdir: "Is a directory"
-  else: "<unmapped error msg yet>"
+template nodeOrDeno(node, deno): untyped =
+  when InNodeJs: node
+  else:
+    if inDeno: deno
+    else: node
 
+proc jsErrnoMsg*(e: OSErrorCode): string =
+  let ie = e.int
+  errno.strerror ie
 
 const fallbackV = low cint
 proc isErrnoSet*(e: cint): bool =
   ## internal.
   e != 0 and e != fallbackV
 
-template st {.dirty.} =
-  bind fallbackV
-  {.emit: [`res@jscompat`, " = (-e.errno)",
+proc getErrno(e: JsObject): cint =
+  nodeOrDeno:
+    if not isUndefined e.errno:
+      -e.errno.to cint
+    else:
+      fallbackV
+  do:
+    let name = e.code.to cstring
+    for k, v in pairs(errorcode):
+      if v == name:
+        return cint k
+    unreachable("Not registered errno(ref Errno enum inpkg/errno)")
     # without following, res may become NaN due to `-undefined`
-    "?? ", fallbackV, ";"
-  ].}
+    #fallbackV
+
+template st {.dirty.} =
+  bind getErrno
+  bind isUndefined, to, `.`
+  let e{.importc.}: JsObject
+  `res@jscompat` = getErrno(e)
 
 template catchJsErrCodeToRes(doBody; exceptDo: untyped = st): cint {.dirty.} =
   bind jsTryCatchE

@@ -1,6 +1,6 @@
 
 import pkg/errno/errnoUtils
-import ./private/catchJsErrAux
+import pkg/jsbuiltins/catchJsErr as catchJsErrAux
 import ./oserr
 export catchJsErrAux
 
