@@ -22,6 +22,8 @@ template pylib(x, ver) =
            else: pylibPre & x
 
 pylib "errno", " ^= 0.1.0"
+pylib "handy_sugars", " ^= 0.1.0"
+pylib "jsbuiltins", " ^= 0.1.0"
 
 task test, "run testament":
   exec """testament p "tests/*.nim" """
