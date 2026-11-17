@@ -37,13 +37,16 @@ template st {.dirty.} =
     "?? ", fallbackV, ";"
   ].}
 
-template catchJsErrCodeToRes(doBody; exceptDo: untyped = st): cint {.dirty.} =
+template catchJsErrCodeToRes(doBody; exceptDo): cint {.dirty.} =
   bind jsTryCatchE
   block:
     # we use `...` to manually "genSym"
     var `res@jscompat`: cint = 0
     jsTryCatchE(doBody, exceptDo)
     `res@jscompat`
+template catchJsErrCodeToRes(doBody): cint {.dirty.} =
+  bind st, catchJsErrCodeToRes
+  catchJsErrCodeToRes(doBody, st)
 
 template catchJsErrCodeToResAndMsg(errMsg: var string; doBody): int =
   bind catchJsErrCodeToRes, st
